@@ -44,11 +44,11 @@ reachable from the Tor network. Add these lines to your /etc/tor/torrc (or equiv
 config file):
 
 	HiddenServiceDir /var/lib/tor/snowgem-service/
-	HiddenServicePort 16113 127.0.0.1:16113
+	HiddenServicePort 20001 127.0.0.1:20001
 	HiddenServicePort 26113 127.0.0.1:26113
 
 The directory can be different of course, but (both) port numbers should be equal to
-your snowgemd's P2P listen port (16113 by default).
+your snowgemd's P2P listen port (20001 by default).
 
 	-externalip=X   You can tell Snowgem about its publicly reachable address using
 	                this option, and this can be a .onion address. Given the above
@@ -83,7 +83,7 @@ as well, use `discover` instead:
 
 	./snowgemd ... -discover
 
-and open port 16113 on your firewall (or use -upnp).
+and open port 20001 on your firewall (or use -upnp).
 
 If you only want to use Tor to reach onion addresses, but not use it as a proxy
 for normal IPv4/IPv6 communication, use:
