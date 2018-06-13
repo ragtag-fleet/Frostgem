@@ -100,6 +100,7 @@ public:
     std::string GetFoundersRewardAddressAtIndex(int i) const;
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
+    int GetNewTimeRule() const { return newTimeRule; }
 protected:
     CChainParams() {}
 
@@ -111,6 +112,7 @@ protected:
     int nDefaultPort = 0;
     long nMaxTipAge = 0;
     uint64_t nPruneAfterHeight = 0;
+    int newTimeRule;
     unsigned int nEquihashN = 0;
     unsigned int nEquihashK = 0;
     std::vector<CDNSSeedData> vSeeds;

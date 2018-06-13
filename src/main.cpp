@@ -3301,8 +3301,13 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                          REJECT_INVALID, "high-hash");
 
+    const CChainParams& chainParams = Params();
     // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+    if (block.GetBlockTime() < chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
+                             REJECT_INVALID, "time-too-new");
+    //new rule
+    else if (block.GetBlockTime() >= chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 10 * 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
 
@@ -3317,6 +3322,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
                              
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
+
     if (!CheckBlockHeader(block, state, fCheckPOW))
         return false;
 
@@ -3378,6 +3384,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
 
     // masternode payments / budgets
     CBlockIndex* pindexPrev = chainActive.Tip();
+
     int nHeight = 0;
     if (pindexPrev != NULL) {
         if (pindexPrev->GetBlockHash() == block.hashPrevBlock) {

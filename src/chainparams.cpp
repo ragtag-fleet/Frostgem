@@ -88,6 +88,7 @@ public:
         consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 1 * 60; // 1 min
+
         /**
          * The message start string should be awesome! Ⓢ❤
          */
@@ -99,6 +100,7 @@ public:
         nDefaultPort = 16113;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
+        newTimeRule = 1528847567;
         const size_t N = 200, K = 9;
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
