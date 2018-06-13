@@ -119,10 +119,10 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
 
-        vSeeds.push_back(CDNSSeedData("dnsseed1.snowgem.org", "dnsseed1.snowgem.org")); //Snowgem seed node
-        vSeeds.push_back(CDNSSeedData("dnsseed2.snowgem.org", "dnsseed2.snowgem.org")); //Snowgem seed node
-        vSeeds.push_back(CDNSSeedData("dnsseed3.snowgem.org", "dnsseed3.snowgem.org")); //Snowgem seed node
-        vSeeds.push_back(CDNSSeedData("abctoxyz.site", "dnsseed.abctoxyz.site")); //Snowgem seed node
+        // vSeeds.push_back(CDNSSeedData("dnsseed1.snowgem.org", "dnsseed1.snowgem.org")); //Snowgem seed node
+        // vSeeds.push_back(CDNSSeedData("dnsseed2.snowgem.org", "dnsseed2.snowgem.org")); //Snowgem seed node
+        // vSeeds.push_back(CDNSSeedData("dnsseed3.snowgem.org", "dnsseed3.snowgem.org")); //Snowgem seed node
+        // vSeeds.push_back(CDNSSeedData("abctoxyz.site", "dnsseed.abctoxyz.site")); //Snowgem seed node
 
         // guarantees the first 2 characters, when base58 encoded, are "s1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0x28};
@@ -152,9 +152,10 @@ public:
             boost::assign::map_list_of
             (0, consensus.hashGenesisBlock)
             (23000, uint256S("0x000000006b366d2c1649a6ebb4787ac2b39c422f451880bc922e3a6fbd723616"))
-            (88000, uint256S("0x0000003ef01c0d1f954fdd738dac1b4f7191e6bee66ed8cb882d00d65fccd89b")),
-            1519442392,     // * UNIX timestamp of last checkpoint block
-            194812,         // * total number of transactions between genesis and last checkpoint
+            (88000, uint256S("0x0000003ef01c0d1f954fdd738dac1b4f7191e6bee66ed8cb882d00d65fccd89b"))
+            (243818, uint256S("0x0000000e520b0e0ffcf80f94d1f1fa89866c51a1a2cf59d56edcdf770345aa0d")),
+            1528916859,     // * UNIX timestamp of last checkpoint block
+            565075,         // * total number of transactions between genesis and last checkpoint
                             //   (the tx=... number in the SetBestChain debug.log lines)
             1275            // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
