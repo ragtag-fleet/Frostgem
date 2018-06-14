@@ -100,7 +100,7 @@ public:
         nDefaultPort = 16113;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        newTimeRule = 1528847567;
+        newTimeRule = 243866;
         const size_t N = 200, K = 9;
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
