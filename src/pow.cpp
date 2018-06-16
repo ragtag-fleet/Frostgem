@@ -81,14 +81,14 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     return bnNew.GetCompact();
 }
 
-bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
+bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params, int nHeight)
 {
-    unsigned int n = params.EquihashN();
-    unsigned int k = params.EquihashK();
+    unsigned int n = params.EquihashN(nHeight);
+    unsigned int k = params.EquihashK(nHeight);
 
     // Hash state
     crypto_generichash_blake2b_state state;
-    EhInitialiseState(n, k, state);
+    EhInitialiseState(n, k, state, params.EquihashUseXSGSalt(nHeight));
 
     // I = the block header minus nonce and solution.
     CEquihashInput I{*pblock};
