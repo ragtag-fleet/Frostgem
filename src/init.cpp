@@ -1819,9 +1819,23 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             if (!obfuScationSigner.SetKey(strMasterNodePrivKey, errorMessage, key, pubkey)) {
                 return InitError(_("Invalid masternodeprivkey. Please see documenation."));
             }
-
+            strRefAddr = GetArg("-referenceaddr", "");
             activeMasternode.pubKeyMasternode = pubkey;
 
+            if(!strRefAddr.empty())
+            {
+                CBitcoinAddress address(strRefAddr);
+                bool isValid = address.IsValid();
+
+                if(isValid)
+                {
+                    activeMasternode.referenceAddress = strRefAddr;
+                }
+                else
+                {
+                    return InitError(_("Reference masternode address is not valid. Please see documentation for help."));
+                }
+            }
         } else {
             return InitError(_("You must specify a masternodeprivkey in the configuration. Please see documentation for help."));
         }

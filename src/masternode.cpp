@@ -66,6 +66,7 @@ CMasternode::CMasternode()
     addr = CService();
     pubKeyCollateralAddress = CPubKey();
     pubKeyMasternode = CPubKey();
+    refAddress = std::string();
     sig = std::vector<unsigned char>();
     activeState = MASTERNODE_ENABLED;
     sigTime = GetAdjustedTime();
@@ -91,6 +92,7 @@ CMasternode::CMasternode(const CMasternode& other)
     addr = other.addr;
     pubKeyCollateralAddress = other.pubKeyCollateralAddress;
     pubKeyMasternode = other.pubKeyMasternode;
+    refAddress = other.refAddress;
     sig = other.sig;
     activeState = other.activeState;
     sigTime = other.sigTime;
@@ -116,6 +118,7 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb)
     addr = mnb.addr;
     pubKeyCollateralAddress = mnb.pubKeyCollateralAddress;
     pubKeyMasternode = mnb.pubKeyMasternode;
+    refAddress = mnb.refAddress;
     sig = mnb.sig;
     activeState = MASTERNODE_ENABLED;
     sigTime = mnb.sigTime;
@@ -142,6 +145,7 @@ bool CMasternode::UpdateFromNewBroadcast(CMasternodeBroadcast& mnb)
     if (mnb.sigTime > sigTime) {
         pubKeyMasternode = mnb.pubKeyMasternode;
         pubKeyCollateralAddress = mnb.pubKeyCollateralAddress;
+        refAddress = mnb.refAddress;
         sigTime = mnb.sigTime;
         sig = mnb.sig;
         protocolVersion = mnb.protocolVersion;
@@ -322,6 +326,7 @@ CMasternodeBroadcast::CMasternodeBroadcast()
     vin = CTxIn();
     addr = CService();
     pubKeyCollateralAddress = CPubKey();
+    refAddress = std::string();
     pubKeyMasternode1 = CPubKey();
     sig = std::vector<unsigned char>();
     activeState = MASTERNODE_ENABLED;
@@ -337,11 +342,12 @@ CMasternodeBroadcast::CMasternodeBroadcast()
     nLastScanningErrorBlockHeight = 0;
 }
 
-CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int protocolVersionIn)
+CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int protocolVersionIn, std::string refAddressNew)
 {
     vin = newVin;
     addr = newAddr;
     pubKeyCollateralAddress = pubKeyCollateralAddressNew;
+    refAddress = refAddressNew;
     pubKeyMasternode = pubKeyMasternodeNew;
     sig = std::vector<unsigned char>();
     activeState = MASTERNODE_ENABLED;
@@ -362,6 +368,7 @@ CMasternodeBroadcast::CMasternodeBroadcast(const CMasternode& mn)
     vin = mn.vin;
     addr = mn.addr;
     pubKeyCollateralAddress = mn.pubKeyCollateralAddress;
+    refAddress = mn.refAddress;
     pubKeyMasternode = mn.pubKeyMasternode;
     sig = mn.sig;
     activeState = mn.activeState;
@@ -377,7 +384,7 @@ CMasternodeBroadcast::CMasternodeBroadcast(const CMasternode& mn)
     nLastScanningErrorBlockHeight = mn.nLastScanningErrorBlockHeight;
 }
 
-bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& strErrorRet, CMasternodeBroadcast& mnbRet, bool fOffline)
+bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string refAddress, std::string& strErrorRet, CMasternodeBroadcast& mnbRet, bool fOffline)
 {
     CTxIn txin;
     CPubKey pubKeyCollateralAddressNew;
@@ -404,6 +411,13 @@ bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMast
         return false;
     }
 
+    if (CBitcoinAddress(pubKeyCollateralAddressNew.GetID()).ToString().compare(refAddress) == 0)
+    {
+        strErrorRet = strprintf("Reference address cannot be the same as collateral masternode address");
+        LogPrint("masternode","CMasternodeBroadcast::Create -- %s\n", strErrorRet);
+        return false;
+    }
+
     CService service = CService(strService);
     int mainnetDefaultPort = Params(CBaseChainParams::MAIN).GetDefaultPort();
     if (NetworkIdFromCommandLine() == CBaseChainParams::MAIN) {
@@ -418,10 +432,46 @@ bool CMasternodeBroadcast::Create(std::string strService, std::string strKeyMast
         return false;
     }
 
-    return Create(txin, CService(strService), keyCollateralAddressNew, pubKeyCollateralAddressNew, keyMasternodeNew, pubKeyMasternodeNew, strErrorRet, mnbRet);
+    if(!refAddress.empty())
+    {
+        CBitcoinAddress address(refAddress);
+        bool isValid = address.IsValid();
+
+        if(!isValid)
+        {
+            strErrorRet = strprintf("Invalid reference address %s", refAddress.c_str());
+            LogPrint("masternode","CMasternodeBroadcast::Create -- %s\n", strErrorRet);
+            return false;
+        }
+
+        int nHeight;
+        {
+            CBlockIndex* pindex = chainActive.Tip();
+            if(!pindex) return false;
+            nHeight = pindex->nHeight;
+        }
+        std::vector<pair<int, CMasternode> > vMasternodeRanks = mnodeman.GetMasternodeRanks(nHeight);
+
+        bool found = false;
+        BOOST_FOREACH (PAIRTYPE(int, CMasternode) & s, vMasternodeRanks) {
+            CMasternode* mn = mnodeman.Find(s.second.vin);
+
+            if (mn != NULL) {
+                if (CBitcoinAddress(mn->pubKeyCollateralAddress.GetID()).ToString().compare(refAddress) != 0) continue;
+                found = true;
+                break;
+            }
+        }
+        if(found == false){
+          strErrorRet = strprintf("Reference address %s is not a masternode", refAddress.c_str());
+          LogPrint("masternode","CMasternodeBroadcast::Create -- %s\n", strErrorRet);
+          return false;
+        }
+    }
+    return Create(txin, CService(strService), keyCollateralAddressNew, pubKeyCollateralAddressNew, keyMasternodeNew, pubKeyMasternodeNew, refAddress, strErrorRet, mnbRet);
 }
 
-bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollateralAddressNew, CPubKey pubKeyCollateralAddressNew, CKey keyMasternodeNew, CPubKey pubKeyMasternodeNew, std::string& strErrorRet, CMasternodeBroadcast& mnbRet)
+bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollateralAddressNew, CPubKey pubKeyCollateralAddressNew, CKey keyMasternodeNew, CPubKey pubKeyMasternodeNew, std::string refAddress, std::string& strErrorRet, CMasternodeBroadcast& mnbRet)
 {
     // wait for reindex and/or import to finish
     if (fImporting || fReindex) return false;
@@ -438,7 +488,7 @@ bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollater
         return false;
     }
 
-    mnbRet = CMasternodeBroadcast(service, txin, pubKeyCollateralAddressNew, pubKeyMasternodeNew, PROTOCOL_VERSION);
+    mnbRet = CMasternodeBroadcast(service, txin, pubKeyCollateralAddressNew, pubKeyMasternodeNew, PROTOCOL_VERSION, refAddress);
 
     if (!mnbRet.IsValidNetAddr()) {
         strErrorRet = strprintf("Invalid IP address %s, masternode=%s", mnbRet.addr.ToStringIP (), txin.prevout.hash.ToString());

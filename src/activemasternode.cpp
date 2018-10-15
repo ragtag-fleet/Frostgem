@@ -82,7 +82,7 @@ void CActiveMasternode::ManageStatus()
             return;
         }
 
-		CNode* pnode = ConnectNode((CAddress)service, service.ToString().c_str());
+		    CNode* pnode = ConnectNode((CAddress)service, service.ToString().c_str());
         if (!pnode) {
             notCapableReason = "Could not connect to " + service.ToString();
             LogPrintf("CActiveMasternode::ManageStatus() - not capable: %s\n", notCapableReason);
@@ -115,7 +115,7 @@ void CActiveMasternode::ManageStatus()
                 return;
             }
 
-            if (!Register(vin, service, keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, errorMessage)) {
+            if (!Register(vin, service, keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, referenceAddress, errorMessage)) {
                 notCapableReason = "Error on Register: " + errorMessage;
                 LogPrintf("Register::ManageStatus() - %s\n", notCapableReason);
                 return;
@@ -239,7 +239,7 @@ bool CActiveMasternode::SendMasternodePing(std::string& errorMessage)
     }
 }
 
-bool CActiveMasternode::Register(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string& errorMessage)
+bool CActiveMasternode::Register(std::string strService, std::string strKeyMasternode, std::string strTxHash, std::string strOutputIndex, std::string refAddress, std::string& errorMessage)
 {
     CTxIn vin;
     CPubKey pubKeyCollateralAddress;
@@ -266,6 +266,13 @@ bool CActiveMasternode::Register(std::string strService, std::string strKeyMaste
         return false;
     }
 
+    if (CBitcoinAddress(pubKeyCollateralAddress.GetID()).ToString().compare(refAddress) == 0)
+    {
+        errorMessage = strprintf("Reference address cannot be the same as collateral masternode address");
+        LogPrintf("CActiveMasternode::Register() - %s\n", errorMessage);
+        return false;
+    }
+
     CService service;
     if (!Lookup(strService.c_str(), service, 0, false))
         return LogPrintf("Invalid address %s for masternode.", strService);
@@ -281,12 +288,48 @@ bool CActiveMasternode::Register(std::string strService, std::string strKeyMaste
         return false;
     }
 
+    if(!refAddress.empty())
+    {
+        CBitcoinAddress address(refAddress);
+        bool isValid = address.IsValid();
+
+        if(!isValid)
+        {
+            errorMessage = strprintf("Invalid reference address %s.", refAddress.c_str());
+            LogPrintf("CActiveMasternode::Register() - %s\n", errorMessage);
+            return false;
+        }
+
+        int nHeight;
+        {
+            CBlockIndex* pindex = chainActive.Tip();
+            if(!pindex) return false;
+            nHeight = pindex->nHeight;
+        }
+        std::vector<pair<int, CMasternode> > vMasternodeRanks = mnodeman.GetMasternodeRanks(nHeight);
+
+        bool found = false;
+        BOOST_FOREACH (PAIRTYPE(int, CMasternode) & s, vMasternodeRanks) {
+            CMasternode* mn = mnodeman.Find(s.second.vin);
+
+            if (mn != NULL) {
+                if (CBitcoinAddress(mn->pubKeyCollateralAddress.GetID()).ToString().compare(refAddress) != 0) continue;
+                found = true;
+                break;
+            }
+        }
+        if(found == false){
+          errorMessage = strprintf("Reference address %s is not a masternode", refAddress.c_str());
+          LogPrintf("CActiveMasternode::Register() - %s\n", errorMessage);
+          return false;
+        }
+    }
     //addrman.Add(CAddress(service), CNetAddr("127.0.0.1"), 2 * 60 * 60);
 
-    return Register(vin, CService(strService), keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, errorMessage);
+    return Register(vin, CService(strService), keyCollateralAddress, pubKeyCollateralAddress, keyMasternode, pubKeyMasternode, refAddress, errorMessage);
 }
 
-bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateralAddress, CPubKey pubKeyCollateralAddress, CKey keyMasternode, CPubKey pubKeyMasternode, std::string& errorMessage)
+bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateralAddress, CPubKey pubKeyCollateralAddress, CKey keyMasternode, CPubKey pubKeyMasternode, std::string refAddress, std::string& errorMessage)
 {
     CMasternodeBroadcast mnb;
     CMasternodePing mnp(vin);
@@ -298,7 +341,7 @@ bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateral
     mnodeman.mapSeenMasternodePing.insert(make_pair(mnp.GetHash(), mnp));
 
     LogPrintf("CActiveMasternode::Register() - Adding to Masternode list\n    service: %s\n    vin: %s\n", service.ToString(), vin.ToString());
-    mnb = CMasternodeBroadcast(service, vin, pubKeyCollateralAddress, pubKeyMasternode, PROTOCOL_VERSION);
+    mnb = CMasternodeBroadcast(service, vin, pubKeyCollateralAddress, pubKeyMasternode, PROTOCOL_VERSION, refAddress);
     mnb.lastPing = mnp;
     if (!mnb.Sign(keyCollateralAddress)) {
         errorMessage = strprintf("Failed to sign broadcast, vin: %s", vin.ToString());
@@ -352,7 +395,7 @@ bool CActiveMasternode::Register(CTxIn vin, CService service, CKey keyCollateral
 
     LOCK(cs_vNodes);
     BOOST_FOREACH (CNode* pnode, vNodes)
-        pnode->PushMessage("dsee", vin, service, vchMasterNodeSignature, masterNodeSignatureTime, pubKeyCollateralAddress, pubKeyMasternode, -1, -1, masterNodeSignatureTime, PROTOCOL_VERSION, donationAddress, donationPercantage);
+        pnode->PushMessage("dsee", vin, service, vchMasterNodeSignature, masterNodeSignatureTime, pubKeyCollateralAddress, pubKeyMasternode, -1, -1, masterNodeSignatureTime, PROTOCOL_VERSION, donationAddress, donationPercantage, refAddress);
 
     /*
      * END OF "REMOVE"

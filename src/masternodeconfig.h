@@ -27,15 +27,17 @@ public:
         std::string privKey;
         std::string txHash;
         std::string outputIndex;
+        std::string refAddress;
 
     public:
-        CMasternodeEntry(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex)
+        CMasternodeEntry(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex, std::string refAddress)
         {
             this->alias = alias;
             this->ip = ip;
             this->privKey = privKey;
             this->txHash = txHash;
             this->outputIndex = outputIndex;
+            this->refAddress = refAddress;
         }
 
         const std::string& getAlias() const
@@ -89,6 +91,16 @@ public:
         {
             this->ip = ip;
         }
+
+        const std::string& getReferenceAddress() const
+        {
+            return refAddress;
+        }
+
+        void setReferenceAddress(const std::string& refAddress)
+        {
+            this->refAddress = refAddress;
+        }
     };
 
     CMasternodeConfig()
@@ -98,7 +110,7 @@ public:
 
     void clear();
     bool read(std::string& strErr);
-    void add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex);
+    void add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex, std::string refAddress);
 
     std::vector<CMasternodeEntry>& getEntries()
     {

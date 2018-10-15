@@ -14,9 +14,9 @@
 
 CMasternodeConfig masternodeConfig;
 
-void CMasternodeConfig::add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex)
+void CMasternodeConfig::add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex, std::string refaddress)
 {
-    CMasternodeEntry cme(alias, ip, privKey, txHash, outputIndex);
+    CMasternodeEntry cme(alias, ip, privKey, txHash, outputIndex, refaddress);
     entries.push_back(cme);
 }
 
@@ -41,8 +41,9 @@ bool CMasternodeConfig::read(std::string& strErr)
     for (std::string line; std::getline(streamConfig, line); linenumber++) {
         if (line.empty()) continue;
 
+        line += " ";
         std::istringstream iss(line);
-        std::string comment, alias, ip, privKey, txHash, outputIndex;
+        std::string comment, alias, ip, privKey, txHash, outputIndex, refaddress;
 
         if (iss >> comment) {
             if (comment.at(0) == '#') continue;
@@ -50,14 +51,18 @@ bool CMasternodeConfig::read(std::string& strErr)
             iss.clear();
         }
 
-        if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex)) {
+        if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex >> refaddress)) {
             iss.str(line);
             iss.clear();
-            if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex)) {
-                strErr = _("Could not parse masternode.conf") + "\n" +
-                         strprintf(_("Line: %d"), linenumber) + "\n\"" + line + "\"";
-                streamConfig.close();
-                return false;
+            if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex >> refaddress)) {
+                iss.str(line);
+                iss.clear();
+                if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex)) {
+                    strErr = _("Could not parse masternode.conf") + "\n" +
+                            strprintf(_("Line: %d"), linenumber) + "\n\"" + line + "\"";
+                    streamConfig.close();
+                    return false;
+                }
             }
         }
 
@@ -82,7 +87,7 @@ bool CMasternodeConfig::read(std::string& strErr)
         }
 
 
-        add(alias, ip, privKey, txHash, outputIndex);
+        add(alias, ip, privKey, txHash, outputIndex, refaddress);
     }
 
     streamConfig.close();

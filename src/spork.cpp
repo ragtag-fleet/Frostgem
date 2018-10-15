@@ -127,7 +127,7 @@ int64_t GetSporkValue(int nSporkID)
         if (nSporkID == SPORK_10_MASTERNODE_PAY_UPDATED_NODES) r = SPORK_10_MASTERNODE_PAY_UPDATED_NODES_DEFAULT;
         if (nSporkID == SPORK_11_LOCK_INVALID_UTXO) r = SPORK_11_LOCK_INVALID_UTXO_DEFAULT;
         if (nSporkID == SPORK_13_ENABLE_SUPERBLOCKS) r = SPORK_13_ENABLE_SUPERBLOCKS_DEFAULT;
-
+        if (nSporkID == SPORK_14_MASTERNODE_REFERENCE) r = SPORK_14_MASTERNODE_REFERENCE_DEFAULT;
         if (r == -1) LogPrintf("GetSpork::Unknown Spork %d\n", nSporkID);
     }
 
@@ -264,6 +264,7 @@ int CSporkManager::GetSporkIDByName(std::string strName)
     if (strName == "SPORK_10_MASTERNODE_PAY_UPDATED_NODES") return SPORK_10_MASTERNODE_PAY_UPDATED_NODES;
     if (strName == "SPORK_11_LOCK_INVALID_UTXO") return SPORK_11_LOCK_INVALID_UTXO;
     if (strName == "SPORK_13_ENABLE_SUPERBLOCKS") return SPORK_13_ENABLE_SUPERBLOCKS;
+    if (strName == "SPORK_14_MASTERNODE_REFERENCE") return SPORK_14_MASTERNODE_REFERENCE;
 
     return -1;
 }
@@ -279,6 +280,6 @@ std::string CSporkManager::GetSporkNameByID(int id)
     if (id == SPORK_10_MASTERNODE_PAY_UPDATED_NODES) return "SPORK_10_MASTERNODE_PAY_UPDATED_NODES";
     if (id == SPORK_11_LOCK_INVALID_UTXO) return "SPORK_11_LOCK_INVALID_UTXO";
     if (id == SPORK_13_ENABLE_SUPERBLOCKS) return "SPORK_13_ENABLE_SUPERBLOCKS";
-
+    if (id == SPORK_14_MASTERNODE_REFERENCE) return "SPORK_14_MASTERNODE_REFERENCE";
     return "Unknown";
 }

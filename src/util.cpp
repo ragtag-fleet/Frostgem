@@ -104,6 +104,7 @@ int nSwiftTXDepth = 5;
 bool fMasterNode = false;
 string strMasterNodePrivKey = "";
 string strMasterNodeAddr = "";
+string strRefAddr = "";
 bool fLiteMode = false;
 int nSnowgemSendRounds = 10;
 int nAnonymizeSnowgemAmount = 1000;
