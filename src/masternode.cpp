@@ -78,6 +78,7 @@ CMasternode::CMasternode()
     allowFreeTx = true;
     nActiveState = MASTERNODE_ENABLED,
     protocolVersion = PROTOCOL_VERSION;
+    walletVersion = 0;
     nLastDsq = 0;
     nScanningErrorCount = 0;
     nLastScanningErrorBlockHeight = 0;
@@ -103,6 +104,7 @@ CMasternode::CMasternode(const CMasternode& other)
     allowFreeTx = other.allowFreeTx;
     nActiveState = MASTERNODE_ENABLED,
     protocolVersion = other.protocolVersion;
+    walletVersion = other.walletVersion;
     nLastDsq = other.nLastDsq;
     nScanningErrorCount = other.nScanningErrorCount;
     nLastScanningErrorBlockHeight = other.nLastScanningErrorBlockHeight;
@@ -128,6 +130,7 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb)
     allowFreeTx = true;
     nActiveState = MASTERNODE_ENABLED,
     protocolVersion = mnb.protocolVersion;
+    walletVersion = mnb.walletVersion;
     nLastDsq = mnb.nLastDsq;
     nScanningErrorCount = 0;
     nLastScanningErrorBlockHeight = 0;
@@ -147,6 +150,7 @@ bool CMasternode::UpdateFromNewBroadcast(CMasternodeBroadcast& mnb)
         sigTime = mnb.sigTime;
         sig = mnb.sig;
         protocolVersion = mnb.protocolVersion;
+        walletVersion = mnb.walletVersion;
         addr = mnb.addr;
         lastTimeChecked = 0;
         int nDoS = 0;
@@ -334,12 +338,13 @@ CMasternodeBroadcast::CMasternodeBroadcast()
     unitTest = false;
     allowFreeTx = true;
     protocolVersion = PROTOCOL_VERSION;
+    walletVersion = 0;
     nLastDsq = 0;
     nScanningErrorCount = 0;
     nLastScanningErrorBlockHeight = 0;
 }
 
-CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int protocolVersionIn)
+CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int protocolVersionIn, int walletVersionIn)
 {
     vin = newVin;
     addr = newAddr;
@@ -354,6 +359,7 @@ CMasternodeBroadcast::CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubK
     unitTest = false;
     allowFreeTx = true;
     protocolVersion = protocolVersionIn;
+    walletVersion = walletVersionIn;
     nLastDsq = 0;
     nScanningErrorCount = 0;
     nLastScanningErrorBlockHeight = 0;
@@ -374,6 +380,7 @@ CMasternodeBroadcast::CMasternodeBroadcast(const CMasternode& mn)
     unitTest = mn.unitTest;
     allowFreeTx = mn.allowFreeTx;
     protocolVersion = mn.protocolVersion;
+    walletVersion = mn.walletVersion;
     nLastDsq = mn.nLastDsq;
     nScanningErrorCount = mn.nScanningErrorCount;
     nLastScanningErrorBlockHeight = mn.nLastScanningErrorBlockHeight;
@@ -440,7 +447,7 @@ bool CMasternodeBroadcast::Create(CTxIn txin, CService service, CKey keyCollater
         return false;
     }
 
-    mnbRet = CMasternodeBroadcast(service, txin, pubKeyCollateralAddressNew, pubKeyMasternodeNew, PROTOCOL_VERSION);
+    mnbRet = CMasternodeBroadcast(service, txin, pubKeyCollateralAddressNew, pubKeyMasternodeNew, PROTOCOL_VERSION, CLIENT_VERSION);
 
     if (!mnbRet.IsValidNetAddr()) {
         strErrorRet = strprintf("Invalid IP address %s, masternode=%s", mnbRet.addr.ToStringIP (), txin.prevout.hash.ToString());

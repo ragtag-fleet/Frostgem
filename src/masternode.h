@@ -138,6 +138,7 @@ public:
     bool unitTest;
     bool allowFreeTx;
     int protocolVersion;
+    int walletVersion;
     int nActiveState;
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node
     int nScanningErrorCount;
@@ -172,6 +173,7 @@ public:
         swap(first.unitTest, second.unitTest);
         swap(first.allowFreeTx, second.allowFreeTx);
         swap(first.protocolVersion, second.protocolVersion);
+        swap(first.walletVersion, second.walletVersion);
         swap(first.nLastDsq, second.nLastDsq);
         swap(first.nScanningErrorCount, second.nScanningErrorCount);
         swap(first.nLastScanningErrorBlockHeight, second.nLastScanningErrorBlockHeight);
@@ -217,6 +219,10 @@ public:
         READWRITE(nLastDsq);
         READWRITE(nScanningErrorCount);
         READWRITE(nLastScanningErrorBlockHeight);
+        if(walletVersion > 0)
+        {
+            READWRITE(walletVersion);
+        }
     }
 
     int64_t SecondsSincePayment();
@@ -295,7 +301,7 @@ class CMasternodeBroadcast : public CMasternode
 {
 public:
     CMasternodeBroadcast();
-    CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey newPubkey, CPubKey newPubkey2, int protocolVersionIn);
+    CMasternodeBroadcast(CService newAddr, CTxIn newVin, CPubKey newPubkey, CPubKey newPubkey2, int protocolVersionIn, int walletVersionIn);
     CMasternodeBroadcast(const CMasternode& mn);
 
     bool CheckAndUpdate(int& nDoS);
@@ -317,6 +323,10 @@ public:
         READWRITE(protocolVersion);
         READWRITE(lastPing);
         READWRITE(nLastDsq);
+        if(walletVersion > 0)
+        {
+            READWRITE(walletVersion);
+        }
     }
 
     uint256 GetHash()
